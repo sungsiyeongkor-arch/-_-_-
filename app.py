@@ -33,16 +33,21 @@ TPL = "plotly_white"
 # 2. 데이터 로딩
 # ============================================================
 APP_DIR = Path(__file__).resolve().parent
-def _find(name):
+
+def _find(keywords):
+    """파일명에 keywords가 모두 포함된 CSV를 data/ 또는 최상단에서 찾음(한글/영문 무관)."""
     for base in (APP_DIR/"data", APP_DIR):
-        p = base/name
-        if p.exists():
-            return p
+        if not base.exists():
+            continue
+        for p in base.glob("*.csv"):
+            name = p.name.lower()
+            if all(k.lower() in name for k in keywords):
+                return p
     return None
 
 @st.cache_data
-def load_csv(name):
-    p = _find(name)
+def load_csv(keywords):
+    p = _find(keywords)
     if p is None:
         return None
     for enc in ("utf-8-sig", "cp949"):
@@ -53,9 +58,10 @@ def load_csv(name):
     return None
 
 def load_all():
-    f2 = load_csv("clean_file2_export_trend_monthly.csv")
-    f3 = load_csv("clean_file3_materials_trade_by_country.csv")
-    f1 = load_csv("clean_file1_industry_trend_yearly.csv")
+    # 파일명이 영문(export_trend)이든 한글(수출동향)이든 모두 인식
+    f2 = load_csv(["file2"])
+    f3 = load_csv(["file3"])
+    f1 = load_csv(["file1"])
     if f2 is not None:
         f2 = f2.copy(); f2["date"] = pd.to_datetime(f2["date"])
     return f1, f2, f3
